@@ -1,12 +1,13 @@
 import pygame
 from menu import MainMenu, ResolutionMenu, LevelMenu
+from game import Game
 
 pygame.init()
 
 # Set up display and clock
 SCREEN_WIDTH, SCREEN_HEIGHT = 1280, 720
 win = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption("Your Game Title")
+pygame.display.set_caption("Zombies: The Last Pubcrawl")
 clock = pygame.time.Clock()
 
 FPS = 60
@@ -38,17 +39,20 @@ while running:
         selected_resolution, fullscreen = resolution_menu.run()
         if fullscreen:
             SCREEN_WIDTH, SCREEN_HEIGHT = pygame.display.Info().current_w, pygame.display.Info().current_h
-            win = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.FULLSCREEN)
         else:
             SCREEN_WIDTH, SCREEN_HEIGHT = selected_resolution
-            win = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         current_state = MAIN_MENU
     elif current_state == LEVEL_MENU:
         selected_level = level_menu.run()
         print(f"Selected Level: {selected_level}")
+        # Initialize the game with the selected level and screen size
+        game = Game(win, selected_level, SCREEN_WIDTH, SCREEN_HEIGHT)
+        game.run()
         current_state = MAIN_MENU
 
     pygame.display.flip()  # Update the screen at the end of each frame
     clock.tick(FPS)  # Limit frames per second
 
 pygame.quit()
+
+# End of main.py
