@@ -165,20 +165,20 @@ class LevelMenu:
     def __init__(self, screen):
         self.screen = screen
         self.font = pygame.font.Font(None, 48)
-        self.image_size = 300
         self.generate_levels()
+        self.image_size = 200
         self.selected_level_index = 0
         self.arrow_left_rect = pygame.Rect(50, SCREEN_HEIGHT // 2 - 25, 50, 50)
         self.arrow_right_rect = pygame.Rect(SCREEN_WIDTH - 100, SCREEN_HEIGHT // 2 - 25, 50, 50)
-        self.load_images()
-
+        self.play_level_rect = pygame.Rect(SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT - 50, 200, 50)  # Define the play button rect
+        self.load_images()  # Initialize the images attribute here
     def generate_levels(self):
         self.levels = ["Abandoned Alley", "Broken Bridge", "Creepy Cavern", "Decayed District",
                        "Eerie Elevator", "Forgotten Factory", "Haunted Highway", "Infested Island",
                        "Mysterious Mansion", "Shadowy Sewers"]
 
     def load_images(self):
-        self.images = []
+        self.images = []  # Initialize the images list
         for i in range(1, 11):
             image_path = f"level_images/level{i}.png"
             image = pygame.image.load(image_path).convert_alpha()
@@ -197,8 +197,7 @@ class LevelMenu:
 
         # Draw "Play level" button
         play_level_text = self.font.render("Play Level", True, WHITE)
-        play_level_rect = play_level_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 50))
-        self.screen.blit(play_level_text, play_level_rect)
+        self.screen.blit(play_level_text, self.play_level_rect)  # Draw the play button using play_level_rect
 
         # Draw arrows (unchanged)
         arrow_font = pygame.font.Font(None, 48)
@@ -207,24 +206,27 @@ class LevelMenu:
         self.screen.blit(arrow_left, self.arrow_left_rect)
         self.screen.blit(arrow_right, self.arrow_right_rect)
 
-        return play_level_rect  # Return the rectangle of the "Play level" button
+        return self.play_level_rect  # Return the rectangle of the "Play level" button
 
     def run(self):
         while True:
             self.screen.fill(BLACK)
             play_level_rect = self.draw_options()
+
             pygame.display.flip()
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     quit()
+
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     mouse_pos = pygame.mouse.get_pos()
                     if self.arrow_left_rect.collidepoint(mouse_pos):
                         self.selected_level_index = max(0, self.selected_level_index - 1)
                     elif self.arrow_right_rect.collidepoint(mouse_pos):
                         self.selected_level_index = min(len(self.levels) - 1, self.selected_level_index + 1)
-                    elif play_level_rect.collidepoint(mouse_pos):
+                    elif self.play_level_rect.collidepoint(mouse_pos):
                         selected_level = self.levels[self.selected_level_index]
+                        print(f"Selected Level: {selected_level}")  # Print the selected level for testing purposes
                         return selected_level
