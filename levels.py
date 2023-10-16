@@ -16,6 +16,8 @@ class AbandonedAlley:
 
     def draw (self):
         self.player.draw_bullets(self.screen)
+        self.player.draw_health_bar(self.screen)
+
 
     def run(self):
         running = True
@@ -25,10 +27,13 @@ class AbandonedAlley:
                     pygame.quit()
                     quit()
                 # Handle other events as needed
+
             dt = clock.tick(FPS) / 1000.0  # Calculate delta time (in seconds)
             self.update(dt)  # Update the level, passing dt
+            self.player.update(dt) #update player
             self.screen.fill((255, 255, 255))
             self.player.draw(self.screen)
+            self.player.draw_ammo(self.screen)  # Draw ammo count and magazines
             text = self.font.render(f"Welcome to {self.level_name}!", True, (0, 0, 0))
             text_rect = text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 4))
             self.screen.blit(text, text_rect)

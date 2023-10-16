@@ -5,6 +5,8 @@ from game_utils import FPS
 
 pygame.init()
 
+pygame.font.init()
+
 # Set up display and clock
 SCREEN_WIDTH, SCREEN_HEIGHT = 1280, 720
 win = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
