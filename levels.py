@@ -1,6 +1,7 @@
 import pygame
 from game_utils import *
 from player import *
+from enemy import *
 
 class AbandonedAlley:
     def __init__(self, screen):
@@ -9,14 +10,17 @@ class AbandonedAlley:
         self.font = pygame.font.Font(None, 36)
         self.player = Player(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2, "character/0.png")
 
+
+
     def update(self, dt):
         self.player.handle_events(dt)  # Call handle_events on the player instance
         self.player.update_bullets(dt)
 
 
+
     def draw (self):
         self.player.draw_bullets(self.screen)
-        self.player.draw_health_bar(self.screen)
+
 
 
     def run(self):
@@ -37,7 +41,10 @@ class AbandonedAlley:
             text = self.font.render(f"Welcome to {self.level_name}!", True, (0, 0, 0))
             text_rect = text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 4))
             self.screen.blit(text, text_rect)
+            self.player.draw_health_bar(self.screen)
             pygame.display.flip()
+
+
 
 
 
