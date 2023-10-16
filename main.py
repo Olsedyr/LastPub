@@ -8,7 +8,7 @@ pygame.init()
 # Set up display and clock
 SCREEN_WIDTH, SCREEN_HEIGHT = 1280, 720
 win = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption("Your Game Title")
+pygame.display.set_caption("Zombie: The Last Pubcrawl")
 clock = pygame.time.Clock()
 
 # Game states
