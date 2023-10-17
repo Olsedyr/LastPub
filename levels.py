@@ -1,4 +1,6 @@
 import pygame
+
+import enemy
 from game_utils import *
 from player import *
 from enemy import *
@@ -9,12 +11,12 @@ class AbandonedAlley:
         self.level_name = "Abandoned Alley"
         self.font = pygame.font.Font(None, 36)
         self.player = Player(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2, "character/0.png")
-
-
+        self.enemy = Enemy(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2, self.player)
 
     def update(self, dt):
-        self.player.handle_events(dt)  # Call handle_events on the player instance
-        self.player.update_bullets(dt)
+            self.player.handle_events(dt)  # Call handle_events on the player instance
+            self.player.update_bullets(dt, enemies)
+
 
 
 
@@ -35,13 +37,16 @@ class AbandonedAlley:
             dt = clock.tick(FPS) / 1000.0  # Calculate delta time (in seconds)
             self.update(dt)  # Update the level, passing dt
             self.player.update(dt) #update player
+            self.enemy.update(dt) #Update enemy
             self.screen.fill((255, 255, 255))
             self.player.draw(self.screen)
+            self.enemy.draw(self.screen)
             self.player.draw_ammo(self.screen)  # Draw ammo count and magazines
             text = self.font.render(f"Welcome to {self.level_name}!", True, (0, 0, 0))
             text_rect = text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 4))
             self.screen.blit(text, text_rect)
             self.player.draw_health_bar(self.screen)
+            self.enemy.draw_health_bar(self.screen)
             pygame.display.flip()
 
 
@@ -55,7 +60,7 @@ class BrokenBridge:
         self.screen = screen
         self.level_name = "Broken Bridge"
         self.font = pygame.font.Font(None, 36)
-        self.player = Player(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2, "character/0.png")
+        self.player = Player(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2, self.player, "enemy/png/female/Attack (1).png")
 
     def update(self, dt):
         self.player.handle_events(dt)  # Call handle_events on the player instance

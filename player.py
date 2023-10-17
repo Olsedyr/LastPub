@@ -3,14 +3,14 @@ from game_utils import *
 import math
 
 class Player:
-    def __init__(self, x, y, image_path="character/0.png", initial_scale_factor=0.35):
+    def __init__(self, x, y, image_path="", initial_scale_factor=0.35):
         self.original_image = pygame.image.load(image_path).convert_alpha()
         self.scale_factor = initial_scale_factor
         self.rect = self.original_image.get_rect(center=(x, y))
         self.speed = 150  # Set initial speed (pixels per second)
         self.bullets = []
         self.shoot_offset = 0
-        self.health = 125 # Health
+        self.health = 100 # Health
         self.shoot_cooldown = 0.15
         self.time_since_last_shot = 0
         self.ammo = 25  # Initial ammo count
@@ -116,15 +116,20 @@ class Player:
             self.bullets.append(bullet)
             self.ammo -= 1
 
-    def update_bullets(self, dt):
-        self.bullets = [bullet for bullet in self.bullets if pygame.Rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT).colliderect(bullet.rect)]
+    def update_bullets(self, dt, enemies):
+        bullets_to_remove = []
         for bullet in self.bullets:
-            bullet.update(dt)
+            if bullet.update(dt, enemies):
+                bullets_to_remove.append(bullet)
+        self.bullets = [bullet for bullet in self.bullets if bullet not in bullets_to_remove]
+
+
 
     def draw(self, screen):
         screen.blit(self.image, self.rect.topleft)
         for bullet in self.bullets:
             bullet.draw(screen)
+
 
     def draw_health_bar(self, screen):
         health_bar_width = 100  # Width of the health bar
@@ -166,6 +171,15 @@ class Player:
         screen.blit(magazine_text,
                     (10 + scaled_ammo_icon.get_width() + self.icon_spacing * 2 + ammo_text.get_width() +
                      scaled_magazine_icon.get_width() + self.icon_spacing, 10))
+
+    def take_damage(self, damage_amount):
+        self.health -= damage_amount
+
+        # Check if the player's health has reached zero
+        if self.health <= 0:
+            # Handle player death logic (e.g., end the game, reset player position, etc.)
+            print("Dead Player")
+
 class Bullet:
     def __init__(self, x, y, angle, scale_factor=1.0):
         self.original_image = pygame.Surface((8, 8))  # Set the original bullet size to 32x32
@@ -173,16 +187,27 @@ class Bullet:
         self.scale_factor = scale_factor
         self.image = pygame.transform.scale(self.original_image, (int(32 * self.scale_factor), int(32 * self.scale_factor)))  # Scale the bullet
         self.rect = self.image.get_rect(center=(x, y))
-        self.speed = 500  # Set bullet speed (pixels per second)
+        self.speed = 1000  # Set bullet speed (pixels per second)
         self.velocity = pygame.Vector2(math.cos(angle), math.sin(angle)) * self.speed
-
-    def update(self, dt):
+        self.damage = 25
+    def update(self, dt, enemies):
         pixels_per_frame = self.velocity * dt  # Calculate movement based on frame rate
         self.rect.move_ip(pixels_per_frame)
 
-    def is_out_of_screen(self, screen_width, screen_height):
-        return not pygame.Rect(0, 0, screen_width, screen_height).colliderect(self.rect)
+        # Check for collisions with enemies
+        for enemy in enemies:
+            if self.rect.colliderect(enemy.rect):
+                print("bullet hit")
+                enemy.take_damage(self.damage)
+                return True  # Bullet hit an enemy, indicate that it needs to be removed
 
+        # Remove the bullet if it goes out of screen boundaries
+        if not pygame.Rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT).contains(self.rect):
+            return True
+
+        return False  # Bullet is still active if it hasn't hit an enemy or gone out of bounds
     def draw(self, screen):
         scaled_bullet = pygame.transform.scale(self.image, (int(self.rect.width * self.scale_factor), int(self.rect.height * self.scale_factor)))
         screen.blit(scaled_bullet, self.rect.topleft)
+
+

@@ -13,7 +13,7 @@ win = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Zombie: The Last Pubcrawl")
 clock = pygame.time.Clock()
 
-# Game states
+# Game
 MAIN_MENU = 0
 RESOLUTION_MENU = 1
 LEVEL_MENU = 2

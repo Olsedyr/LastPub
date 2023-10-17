@@ -1,110 +1,220 @@
 import pygame
-import random
-import math
 from game_utils import *
-from player import*
+import math
+import random
 
+enemies = []
 class Enemy:
-    def __init__(self, x, y, width, height, walk_left_images, walk_right_images, idle_images, dead_images, attack_images):
-        # Initialize your attributes here
-        self.x = x
-        self.y = y
-        self.width = width
-        self.height = height
-        self.vel = 3
-        self.damage = 5
-        self.health = 100
-        self.is_dead = False
-        self.walk_left_images = walk_left_images
-        self.walk_right_images = walk_right_images
-        self.idle_images = idle_images
-        self.dead_images = dead_images
-        self.attack_images = attack_images
-        self.current_images = self.idle_images
-        self.animation_index = 0
-        self.animation_speed = 0.1  # Adjust this value to control animation speed
+    def __init__(self, x, y, player, num_frames=16, initial_scale_factor=0.30):
 
-def update_animation(self, dt):
-    if len(self.current_images) > 0:
-        self.animation_index += self.animation_speed * dt
-        self.animation_index %= len(self.current_images)
-        print(f"Animation Index: {self.animation_index}")  # Add this line for debugging
-        self.current_image = self.current_images[int(self.animation_index)]
-    else:
-        print("Warning: Current images list is empty!")
-    def update_movement(self, dt, player_x, player_y):
-        # Move towards the player if within a certain radius
-        distance_to_player = math.sqrt((player_x - self.x) ** 2 + (player_y - self.y) ** 2)
+        self.attack_frames = []  # Zombie frames for attacking animation
+        for i in range(9):  # Assuming 8 attack frames numbered from 1 to 8
+            frame_path = f"enemy/export/skeleton-attack_{i}.png"
+            frame_image = pygame.image.load(frame_path).convert_alpha()
+            self.attack_frames.append(frame_image)
 
-        # Define a speed factor to control the movement speed
-        speed = 10
-        #print(f"Distance to player: {distance_to_player}")  # Debugging line, remove it later
-        if distance_to_player > 50:  # Replace 50 with your desired radius
-            # Calculate normalized direction vector towards the player
-            dx = player_x - self.x
-            dy = player_y - self.y
-            distance = math.sqrt(dx ** 2 + dy ** 2)
+
+
+
+
+
+        self.idle_frames = []  # Zombie frames for idle animation
+        for i in range(1, num_frames + 1):
+            frame_path = f"enemy/export/skeleton-idle_{i}.png"
+            frame_image = pygame.image.load(frame_path).convert_alpha()
+            self.idle_frames.append(frame_image)
+
+        self.walk_frames = []  # Zombie frames for walking animation
+        for i in range(1, num_frames + 1):
+            frame_path = f"enemy/export/skeleton-move_{i}.png"
+            frame_image = pygame.image.load(frame_path).convert_alpha()
+            self.walk_frames.append(frame_image)
+
+        self.scale_factor = initial_scale_factor
+        self.speed = 150  # Set initial speed (pixels per second)
+        self.health = 100  # Health
+        self.player = player
+        self.animation_frames = self.idle_frames  # Start with idle frames
+        self.current_frame_index = 0  # Index to keep track of the current frame
+        self.animation_speed = 0.008  # Time (in seconds) between frame changes
+        self.animation_timer = 0  # Timer to keep track of animation time
+        self.detected_player = False  # Flag to track whether the player has been detected
+
+        # Randomly spawn the enemy inside the screen boundaries
+        self.rect = self.animation_frames[0].get_rect(center=(random.randint(0, SCREEN_WIDTH), random.randint(0, SCREEN_HEIGHT)))
+
+        # Radius around the enemy within which it starts following the player
+        self.follow_radius = 200
+
+        self.attacking = False
+        self.attack_damage = 5
+        self.attack_range = 50
+        self.attack_cooldown = 0.5  # Set the cooldown time for attack animation in seconds
+        self.attack_timer = 0  # Timer to track attack animation time
+        enemies.append
+        self.alive = True
+
+    def remove_from_list(self):
+        enemies.remove(self)  # Remove the enemy from the central enemies list
+
+
+
+    def attack(self):
+        # Set the flag to indicate that the enemy is attacking
+        self.attacking = True
+
+        # Play attack animation frames
+        self.animation_frames = self.attack_frames
+
+        # Reset the current frame index to 0
+        self.current_frame_index = 0
+
+
+
+    def update(self, dt):
+        dt = clock.tick(FPS) / 1000  # Elapsed time in seconds
+        self.dt = dt  # Store the elapsed time for frame rate independence
+
+        # Calculate distance to the player
+        dx = self.player.rect.centerx - self.rect.centerx
+        dy = self.player.rect.centery - self.rect.centery
+        distance = math.sqrt(dx ** 2 + dy ** 2)
+
+        # If player is detected, maintain the detected state even if player goes out of range
+        if distance <= self.follow_radius:
+            self.detected_player = True  # Set the flag to True once the player is detected
+
+        # Update animation frames based on player detection and attacking state
+        if self.attacking:
+            self.update_attack_animation(dt)  # Call update_attack_animation here
+            # If attack animation is not complete, keep current frame index
+            if self.current_frame_index == len(self.attack_frames) - 1:
+                self.current_frame_index = 0
+            else:
+                self.current_frame_index += 1
+        elif distance <= self.attack_range:
+            self.attack()
+        elif self.detected_player:
+            self.animation_frames = self.walk_frames
+            self.follow_player()
+            # Update the walking animation frames
+            self.current_frame_index = (self.current_frame_index + 1) % len(self.walk_frames)
+        else:
+            self.animation_frames = self.idle_frames
+            # Update the idle animation frames
+            self.current_frame_index = (self.current_frame_index + 1) % len(self.idle_frames)
+
+        # Move and clamp the enemy within the screen boundaries
+        self.rect.clamp_ip(pygame.Rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT))
+
+
+# In the update_animation method
+    def update_animation(self, dt):
+        self.animation_timer += dt
+        if self.animation_timer >= self.animation_speed:
+            self.animation_timer = 0
+            if self.attacking:
+                self.current_frame_index = (self.current_frame_index + 1) % len(self.attack_frames)
+            else:
+                if self.detected_player:
+                    self.current_frame_index = (self.current_frame_index + 1) % len(self.walk_frames)
+                else:
+                    self.current_frame_index = (self.current_frame_index + 1) % len(self.idle_frames)
+
+            # Update animation frames based on attacking state and player detection
+            if self.attacking:
+                self.animation_frames = self.attack_frames
+            else:
+                self.animation_frames = self.walk_frames if self.detected_player else self.idle_frames
+
+        # In the update_attack_animation method
+    def update_attack_animation(self, dt):
+        if self.attacking:
+            self.attack_timer += dt
+            if self.attack_timer >= self.attack_cooldown:
+                self.attack_timer = 0
+                self.attacking = False
+                self.player.take_damage(self.attack_damage)
+
+                # Reset the animation frames to idle or walking frames based on player detection
+                if self.detected_player:
+                    self.animation_frames = self.walk_frames
+                else:
+                    self.animation_frames = self.idle_frames
+
+                # Reset the current frame index to 0
+                self.current_frame_index = 0
+            else:
+                # Keep updating attack frames if attack animation is ongoing
+                self.animation_frames = self.attack_frames
+                # Ensure current_frame_index doesn't exceed the length of animation frames
+                self.current_frame_index = min(self.current_frame_index, len(self.attack_frames) - 1)
+        else:
+            # If not attacking, set animation frames to idle or walking frames
+            if self.detected_player:
+                self.animation_frames = self.walk_frames
+            else:
+                self.animation_frames = self.idle_frames
+
+            # Reset the current frame index to 0
+            self.current_frame_index = 0
+
+
+
+
+
+
+    def follow_player(self):
+        dx = self.player.rect.centerx - self.rect.centerx
+        dy = self.player.rect.centery - self.rect.centery
+
+        # Calculate the distance to the player
+        distance = math.sqrt(dx ** 2 + dy ** 2)
+
+        # Normalize the direction vector
+        if distance != 0:
             dx /= distance
             dy /= distance
 
-            # Update enemy position based on the direction vector and speed
-            self.x += dx * speed * dt
-            self.y += dy * speed * dt
+        # Calculate the movement based on the normalized direction vector and fixed speed
+        movement_dx = self.speed * dx * self.dt
+        movement_dy = self.speed * dy * self.dt
 
+        # Move the enemy
+        self.rect.move_ip(movement_dx, movement_dy)
 
-    def attack(self, player):
-        # Attack logic: reduce player's health when in range
-        distance_to_player = math.sqrt((player.rect.x - self.x) ** 2 + (player.rect.y - self.y) ** 2)
-        if distance_to_player < 20:  # Replace 20 with your desired attack range
-            player.health -= self.damage
-class RegularEnemy:
-    @staticmethod
-    def load_images():
-        walkRight = [pygame.image.load('enemy/png/female/Walk (1).png'),
-                     pygame.image.load('enemy/png/female/Walk (2).png'),
-                     pygame.image.load('enemy/png/female/Walk (3).png'),
-                     pygame.image.load('enemy/png/female/Walk (4).png'),
-                     pygame.image.load('enemy/png/female/Walk (5).png'),
-                     pygame.image.load('enemy/png/female/Walk (6).png'),
-                     pygame.image.load('enemy/png/female/Walk (7).png'),
-                     pygame.image.load('enemy/png/female/Walk (8).png'),
-                     pygame.image.load('enemy/png/female/Walk (9).png'),
-                     pygame.image.load('enemy/png/female/Walk (10).png')]
+    def draw(self, screen):
+        print("Current Frame Index:", self.current_frame_index)
+        print("Animation Frames Length:", len(self.animation_frames))
 
-        walkLeft = [pygame.transform.flip(image, True, False) for image in walkRight]
+        rotated_image = pygame.transform.rotate(self.animation_frames[self.current_frame_index], -math.degrees(math.atan2(self.player.rect.centery - self.rect.centery, self.player.rect.centerx - self.rect.centerx)))
+        scaled_image = pygame.transform.scale(rotated_image, (int(rotated_image.get_width() * self.scale_factor),
+                                                              int(rotated_image.get_height() * self.scale_factor)))
 
-        Idle = [pygame.image.load('enemy/png/female/Idle (1).png'),
-                pygame.image.load('enemy/png/female/Idle (2).png'),
-                pygame.image.load('enemy/png/female/Idle (3).png'),
-                pygame.image.load('enemy/png/female/Idle (4).png'),
-                pygame.image.load('enemy/png/female/Idle (5).png'),
-                pygame.image.load('enemy/png/female/Idle (6).png'),
-                pygame.image.load('enemy/png/female/Idle (7).png'),
-                pygame.image.load('enemy/png/female/Idle (8).png'),
-                pygame.image.load('enemy/png/female/Idle (9).png'),
-                pygame.image.load('enemy/png/female/Idle (10).png'),
-                pygame.image.load('enemy/png/female/Idle (11).png'),
-                pygame.image.load('enemy/png/female/Idle (12).png'),
-                pygame.image.load('enemy/png/female/Idle (13).png'),
-                pygame.image.load('enemy/png/female/Idle (14).png'),
-                pygame.image.load('enemy/png/female/Idle (15).png')]
+        self.rect = scaled_image.get_rect(center=self.rect.center)
+        screen.blit(scaled_image, self.rect.topleft)
 
-        Dead = [pygame.image.load('enemy/png/female/Dead (1).png'),
-                pygame.image.load('enemy/png/female/Dead (2).png'),
-                pygame.image.load('enemy/png/female/Dead (3).png'),
-                pygame.image.load('enemy/png/female/Dead (4).png'),
-                pygame.image.load('enemy/png/female/Dead (5).png'),
-                pygame.image.load('enemy/png/female/Dead (6).png'),
-                pygame.image.load('enemy/png/female/Dead (7).png'),
-                pygame.image.load('enemy/png/female/Dead (8).png'),
-                pygame.image.load('enemy/png/female/Dead (9).png'),
-                pygame.image.load('enemy/png/female/Dead (10).png')]
+    def draw_health_bar(self, screen):
+        health_bar_width = 100  # Width of the health bar
+        health_bar_height = 10  # Height of the health bar
+        lost_health_width = health_bar_width * (1 - self.health / 100)  # Calculate width of lost health (in red)
 
-        Attack = [pygame.image.load('enemy/png/female/Attack (1).png'),
-                  pygame.image.load('enemy/png/female/Attack (2).png'),
-                  pygame.image.load('enemy/png/female/Attack (3).png'),
-                  pygame.image.load('enemy/png/female/Attack (4).png'),
-                  pygame.image.load('enemy/png/female/Attack (5).png'),
-                  pygame.image.load('enemy/png/female/Attack (6).png'),
-                  pygame.image.load('enemy/png/female/Attack (7).png')]
-        return walkRight, walkLeft, Idle, Dead, Attack
+        # Calculate health bar position (above the player)
+        health_bar_x = self.rect.centerx - health_bar_width // 2
+        health_bar_y = self.rect.bottom + 10
+
+        # Draw green health bar background
+        pygame.draw.rect(screen, (0, 255, 0), (health_bar_x, health_bar_y, health_bar_width, health_bar_height))
+
+        # Draw red lost health overlay
+        pygame.draw.rect(screen, (255, 0, 0), (health_bar_x, health_bar_y, lost_health_width, health_bar_height))
+
+    def take_damage(self, damage_amount):
+        self.health -= damage_amount
+        print("Enemy health after taking damage:", self.health)  # Debug statement
+
+        # Check if the enemy's health has reached zero
+        if self.health <= 0:
+            # Remove the enemy from the list of active enemies
+            self.remove_from_list()
+            print("Regular Zombie killed")
