@@ -119,12 +119,18 @@ class Player:
     def update_bullets(self, dt, enemies):
         bullets_to_remove = []
         for bullet in self.bullets:
-            if bullet.update(dt, enemies):
+            bullet.update(dt)  # Update the bullet position without passing enemies list here
+            for enemy in enemies:
+                if bullet.check_collision(enemy):
+                    bullets_to_remove.append(bullet)
+                    enemy.take_damage(bullet.damage)
+                    break  # Exit the loop after hitting one enemy
+            # Remove the bullet if it goes out of screen boundaries
+            if not pygame.Rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT).contains(bullet.rect):
                 bullets_to_remove.append(bullet)
+
+        # Remove bullets that hit enemies or went out of screen boundaries
         self.bullets = [bullet for bullet in self.bullets if bullet not in bullets_to_remove]
-
-
-
     def draw(self, screen):
         screen.blit(self.image, self.rect.topleft)
         for bullet in self.bullets:
@@ -182,32 +188,33 @@ class Player:
 
 class Bullet:
     def __init__(self, x, y, angle, scale_factor=1.0):
-        self.original_image = pygame.Surface((8, 8))  # Set the original bullet size to 32x32
+        self.original_image = pygame.Surface((8, 8))
         self.original_image.fill((0, 0, 0))
         self.scale_factor = scale_factor
-        self.image = pygame.transform.scale(self.original_image, (int(32 * self.scale_factor), int(32 * self.scale_factor)))  # Scale the bullet
+        self.image = pygame.transform.scale(self.original_image, (int(32 * self.scale_factor), int(32 * self.scale_factor)))
         self.rect = self.image.get_rect(center=(x, y))
-        self.speed = 1000  # Set bullet speed (pixels per second)
+        self.speed = 1000
         self.velocity = pygame.Vector2(math.cos(angle), math.sin(angle)) * self.speed
         self.damage = 25
-    def update(self, dt, enemies):
+
+    def check_collision(self, enemy):
+        if enemy is not None and hasattr(enemy, 'rect'):
+            return self.rect.colliderect(enemy.rect)
+        return False
+
+    def update(self, dt):
         pixels_per_frame = self.velocity * dt  # Calculate movement based on frame rate
         self.rect.move_ip(pixels_per_frame)
-
-        # Check for collisions with enemies
-        for enemy in enemies:
-            if self.rect.colliderect(enemy.rect):
-                print("bullet hit")
-                enemy.take_damage(self.damage)
-                return True  # Bullet hit an enemy, indicate that it needs to be removed
 
         # Remove the bullet if it goes out of screen boundaries
         if not pygame.Rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT).contains(self.rect):
             return True
 
-        return False  # Bullet is still active if it hasn't hit an enemy or gone out of bounds
+        return False
+
     def draw(self, screen):
         scaled_bullet = pygame.transform.scale(self.image, (int(self.rect.width * self.scale_factor), int(self.rect.height * self.scale_factor)))
         screen.blit(scaled_bullet, self.rect.topleft)
+
 
 

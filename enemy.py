@@ -4,7 +4,8 @@ import math
 import random
 
 enemies = []
-class Enemy:
+
+class Enemy():
     def __init__(self, x, y, player, num_frames=16, initial_scale_factor=0.30):
 
         self.attack_frames = []  # Zombie frames for attacking animation
@@ -12,6 +13,7 @@ class Enemy:
             frame_path = f"enemy/export/skeleton-attack_{i}.png"
             frame_image = pygame.image.load(frame_path).convert_alpha()
             self.attack_frames.append(frame_image)
+
 
 
 
@@ -57,7 +59,11 @@ class Enemy:
     def remove_from_list(self):
         enemies.remove(self)  # Remove the enemy from the central enemies list
 
-
+    def check_collision(self, bullets):
+        for bullet in bullets:
+            if bullet.check_collision(self):
+                return bullet
+        return None
 
     def attack(self):
         # Set the flag to indicate that the enemy is attacking
@@ -104,7 +110,11 @@ class Enemy:
             # Update the idle animation frames
             self.current_frame_index = (self.current_frame_index + 1) % len(self.idle_frames)
 
-        # Move and clamp the enemy within the screen boundaries
+
+        if not self.alive:
+            self.remove_from_list()  # Remove the enemy from the list if it's no longer alive
+
+    # Move and clamp the enemy within the screen boundaries
         self.rect.clamp_ip(pygame.Rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT))
 
 
@@ -184,8 +194,6 @@ class Enemy:
         self.rect.move_ip(movement_dx, movement_dy)
 
     def draw(self, screen):
-        print("Current Frame Index:", self.current_frame_index)
-        print("Animation Frames Length:", len(self.animation_frames))
 
         rotated_image = pygame.transform.rotate(self.animation_frames[self.current_frame_index], -math.degrees(math.atan2(self.player.rect.centery - self.rect.centery, self.player.rect.centerx - self.rect.centerx)))
         scaled_image = pygame.transform.scale(rotated_image, (int(rotated_image.get_width() * self.scale_factor),
@@ -193,6 +201,8 @@ class Enemy:
 
         self.rect = scaled_image.get_rect(center=self.rect.center)
         screen.blit(scaled_image, self.rect.topleft)
+
+
 
     def draw_health_bar(self, screen):
         health_bar_width = 100  # Width of the health bar
@@ -211,10 +221,13 @@ class Enemy:
 
     def take_damage(self, damage_amount):
         self.health -= damage_amount
-        print("Enemy health after taking damage:", self.health)  # Debug statement
+        self.health = max(self.health, 0)  # Ensure health doesn't go below 0
 
-        # Check if the enemy's health has reached zero
-        if self.health <= 0:
-            # Remove the enemy from the list of active enemies
+        if self.health <= 0 and self.alive:
+            self.alive = False  # Set the alive flag to False to prevent multiple removals
             self.remove_from_list()
             print("Regular Zombie killed")
+
+    def remove_from_list(self):
+        if self in enemies:
+            enemies.remove(self)
